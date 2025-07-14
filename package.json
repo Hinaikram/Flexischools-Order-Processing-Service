@@ -1,0 +1,36 @@
+{
+  "name": "workspace",
+  "version": "1.0.0",
+  "description": "This repository contains the comprehensive infrastructure and documentation for Flexischools' AWS serverless order-processing service, featuring AWS CDK TypeScript infrastructure, ECS Fargate microservices, and RDS PostgreSQL database integration.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.844.0",
+    "@aws-sdk/client-sqs": "^3.844.0",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.0.13",
+    "@types/pg": "^8.15.4",
+    "aws-cdk-lib": "^2.204.0",
+    "compression": "^1.8.0",
+    "constructs": "^10.4.2",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "express-rate-limit": "^7.5.1",
+    "helmet": "^8.1.0",
+    "jest": "^30.0.4",
+    "pg": "^8.16.3",
+    "source-map-support": "^0.5.21",
+    "ts-jest": "^29.4.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3",
+    "winston": "^3.17.0"
+  }
+}

@@ -1,0 +1,303 @@
+<svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Gradients -->
+    <linearGradient id="awsGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF9900;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FF6600;stop-opacity:1" />
+    </linearGradient>
+    
+    <linearGradient id="dbGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#336791;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#235A72;stop-opacity:1" />
+    </linearGradient>
+    
+    <linearGradient id="containerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2E8B57;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1F5F3F;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Shadows -->
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="2" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1200" height="800" fill="#F8F9FA"/>
+  
+  <!-- Title -->
+  <text x="600" y="30" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#2C3E50">
+    Flexischools AWS Serverless Order-Processing Architecture
+  </text>
+  
+  <!-- VPC Container -->
+  <rect x="50" y="80" width="1100" height="650" fill="#E8F4FD" stroke="#3498DB" stroke-width="2" rx="10" filter="url(#shadow)"/>
+  <text x="70" y="105" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#2980B9">
+    VPC (Virtual Private Cloud)
+  </text>
+  
+  <!-- Public Subnet -->
+  <rect x="80" y="130" width="1040" height="120" fill="#D5E8D4" stroke="#82B366" stroke-width="2" rx="8"/>
+  <text x="100" y="150" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#2E7D32">
+    Public Subnet
+  </text>
+  
+  <!-- Internet Gateway -->
+  <rect x="100" y="160" width="80" height="40" fill="#FFF2CC" stroke="#D6B656" stroke-width="2" rx="5"/>
+  <text x="140" y="180" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#8B4513">
+    Internet Gateway
+  </text>
+  
+  <!-- Application Load Balancer -->
+  <rect x="250" y="160" width="120" height="60" fill="url(#awsGradient)" stroke="#E67E22" stroke-width="2" rx="8" filter="url(#shadow)"/>
+  <text x="310" y="180" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="white">
+    Application
+  </text>
+  <text x="310" y="195" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="white">
+    Load Balancer
+  </text>
+  <text x="310" y="210" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="white">
+    (ALB)
+  </text>
+  
+  <!-- NAT Gateway -->
+  <rect x="450" y="160" width="80" height="40" fill="#FFE6CC" stroke="#D79B00" stroke-width="2" rx="5"/>
+  <text x="490" y="180" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#8B4513">
+    NAT Gateway
+  </text>
+  
+  <!-- CloudWatch -->
+  <rect x="900" y="160" width="100" height="60" fill="#9B59B6" stroke="#8E44AD" stroke-width="2" rx="8" filter="url(#shadow)"/>
+  <text x="950" y="180" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="white">
+    CloudWatch
+  </text>
+  <text x="950" y="195" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="white">
+    Monitoring
+  </text>
+  <text x="950" y="210" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="white">
+    & Logging
+  </text>
+  
+  <!-- Private Subnet -->
+  <rect x="80" y="280" width="1040" height="220" fill="#F8CECC" stroke="#B85450" stroke-width="2" rx="8"/>
+  <text x="100" y="300" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#D32F2F">
+    Private Subnet (with NAT)
+  </text>
+  
+  <!-- ECS Cluster -->
+  <rect x="120" y="320" width="200" height="150" fill="url(#containerGradient)" stroke="#27AE60" stroke-width="2" rx="8" filter="url(#shadow)"/>
+  <text x="220" y="340" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">
+    ECS Fargate Cluster
+  </text>
+  
+  <!-- ECS Service -->
+  <rect x="140" y="360" width="160" height="80" fill="#34495E" stroke="#2C3E50" stroke-width="1" rx="5"/>
+  <text x="220" y="380" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="white">
+    Order Processing Service
+  </text>
+  <text x="220" y="395" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="white">
+    (Node.js/TypeScript)
+  </text>
+  
+  <!-- Task instances -->
+  <rect x="150" y="405" width="25" height="25" fill="#1ABC9C" stroke="#16A085" stroke-width="1" rx="3"/>
+  <text x="162" y="420" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="white">T1</text>
+  
+  <rect x="185" y="405" width="25" height="25" fill="#1ABC9C" stroke="#16A085" stroke-width="1" rx="3"/>
+  <text x="197" y="420" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="white">T2</text>
+  
+  <rect x="220" y="405" width="25" height="25" fill="#1ABC9C" stroke="#16A085" stroke-width="1" rx="3"/>
+  <text x="232" y="420" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="white">T3</text>
+  
+  <rect x="255" y="405" width="25" height="25" fill="#95A5A6" stroke="#7F8C8D" stroke-width="1" rx="3"/>
+  <text x="267" y="420" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="white">...</text>
+  
+  <!-- SQS Queue -->
+  <rect x="380" y="340" width="120" height="80" fill="#E74C3C" stroke="#C0392B" stroke-width="2" rx="8" filter="url(#shadow)"/>
+  <text x="440" y="365" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="white">
+    SQS Queue
+  </text>
+  <text x="440" y="380" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="white">
+    Order Processing
+  </text>
+  <text x="440" y="395" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="white">
+    Events
+  </text>
+  
+  <!-- Dead Letter Queue -->
+  <rect x="520" y="380" width="80" height="40" fill="#8E44AD" stroke="#663399" stroke-width="1" rx="5"/>
+  <text x="560" y="395" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="white">DLQ</text>
+  <text x="560" y="408" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="white">Dead Letter</text>
+  
+  <!-- Secrets Manager -->
+  <rect x="650" y="320" width="100" height="60" fill="#F39C12" stroke="#E67E22" stroke-width="2" rx="8" filter="url(#shadow)"/>
+  <text x="700" y="340" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="white">
+    Secrets
+  </text>
+  <text x="700" y="355" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="white">
+    Manager
+  </text>
+  <text x="700" y="370" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="white">
+    DB Credentials
+  </text>
+  
+  <!-- Auto Scaling -->
+  <rect x="780" y="320" width="100" height="60" fill="#3498DB" stroke="#2980B9" stroke-width="2" rx="8" filter="url(#shadow)"/>
+  <text x="830" y="340" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="white">
+    Auto Scaling
+  </text>
+  <text x="830" y="355" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="white">
+    CPU/Memory
+  </text>
+  <text x="830" y="370" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="white">
+    Based
+  </text>
+  
+  <!-- SNS Topic -->
+  <rect x="900" y="340" width="100" height="60" fill="#E67E22" stroke="#D35400" stroke-width="2" rx="8" filter="url(#shadow)"/>
+  <text x="950" y="360" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="white">
+    SNS Topic
+  </text>
+  <text x="950" y="375" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="white">
+    Alerts &
+  </text>
+  <text x="950" y="390" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="white">
+    Notifications
+  </text>
+  
+  <!-- Isolated Subnet -->
+  <rect x="80" y="530" width="1040" height="150" fill="#FFF2CC" stroke="#D6B656" stroke-width="2" rx="8"/>
+  <text x="100" y="550" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#8B4513">
+    Isolated Subnet (Database)
+  </text>
+  
+  <!-- RDS PostgreSQL -->
+  <rect x="200" y="570" width="180" height="80" fill="url(#dbGradient)" stroke="#2C3E50" stroke-width="2" rx="8" filter="url(#shadow)"/>
+  <text x="290" y="590" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">
+    RDS PostgreSQL
+  </text>
+  <text x="290" y="605" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="white">
+    Primary Instance
+  </text>
+  <text x="290" y="620" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="white">
+    Multi-AZ (Production)
+  </text>
+  <text x="290" y="635" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="white">
+    Encrypted Storage
+  </text>
+  
+  <!-- RDS Backup -->
+  <rect x="420" y="590" width="100" height="40" fill="#5D6D7E" stroke="#34495E" stroke-width="1" rx="5"/>
+  <text x="470" y="605" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="white">
+    Automated
+  </text>
+  <text x="470" y="620" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="white">
+    Backups
+  </text>
+  
+  <!-- Performance Insights -->
+  <rect x="550" y="590" width="100" height="40" fill="#8E44AD" stroke="#663399" stroke-width="1" rx="5"/>
+  <text x="600" y="605" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="white">
+    Performance
+  </text>
+  <text x="600" y="620" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="white">
+    Insights
+  </text>
+  
+  <!-- Parameter Groups -->
+  <rect x="680" y="590" width="100" height="40" fill="#27AE60" stroke="#229954" stroke-width="1" rx="5"/>
+  <text x="730" y="605" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="white">
+    Parameter
+  </text>
+  <text x="730" y="620" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="white">
+    Groups
+  </text>
+  
+  <!-- Security Groups -->
+  <rect x="820" y="590" width="100" height="40" fill="#E74C3C" stroke="#C0392B" stroke-width="1" rx="5"/>
+  <text x="870" y="605" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="white">
+    Security
+  </text>
+  <text x="870" y="620" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="white">
+    Groups
+  </text>
+  
+  <!-- External Systems -->
+  <rect x="50" y="750" width="1100" height="40" fill="#ECF0F1" stroke="#BDC3C7" stroke-width="1" rx="5"/>
+  <text x="70" y="765" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#2C3E50">
+    External Integrations
+  </text>
+  <text x="70" y="780" font-family="Arial, sans-serif" font-size="10" fill="#7F8C8D">
+    Payment Gateways • Email Services • SMS Providers • External APIs
+  </text>
+  
+  <!-- Arrows and Connections -->
+  
+  <!-- Internet to ALB -->
+  <path d="M 180 180 L 250 180" stroke="#2C3E50" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+  
+  <!-- ALB to ECS -->
+  <path d="M 310 220 L 220 320" stroke="#2C3E50" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+  
+  <!-- ECS to SQS -->
+  <path d="M 320 380 L 380 380" stroke="#2C3E50" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+  
+  <!-- SQS to DLQ -->
+  <path d="M 500 390 L 520 400" stroke="#8E44AD" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+  
+  <!-- ECS to Secrets Manager -->
+  <path d="M 320 350 L 650 350" stroke="#F39C12" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+  
+  <!-- ECS to Database -->
+  <path d="M 220 470 L 290 570" stroke="#336791" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+  
+  <!-- Auto Scaling to ECS -->
+  <path d="M 780 350 L 320 380" stroke="#3498DB" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+  
+  <!-- CloudWatch monitoring -->
+  <path d="M 900 190 L 220 320" stroke="#9B59B6" stroke-width="2" fill="none" stroke-dasharray="5,5"/>
+  <path d="M 950 220 L 290 570" stroke="#9B59B6" stroke-width="2" fill="none" stroke-dasharray="5,5"/>
+  
+  <!-- SNS Alerts -->
+  <path d="M 950 340 L 950 220" stroke="#E67E22" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+  
+  <!-- Arrow marker definition -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#2C3E50"/>
+    </marker>
+  </defs>
+  
+  <!-- Data Flow Legend -->
+  <rect x="50" y="60" width="200" height="15" fill="white" stroke="#BDC3C7" stroke-width="1"/>
+  <text x="60" y="70" font-family="Arial, sans-serif" font-size="10" fill="#2C3E50">
+    Data Flow: User Request → Processing → Database
+  </text>
+  
+  <!-- Availability Zones -->
+  <text x="100" y="715" font-family="Arial, sans-serif" font-size="10" fill="#7F8C8D">
+    AZ-1a
+  </text>
+  <text x="400" y="715" font-family="Arial, sans-serif" font-size="10" fill="#7F8C8D">
+    AZ-1b
+  </text>
+  <text x="700" y="715" font-family="Arial, sans-serif" font-size="10" fill="#7F8C8D">
+    AZ-1c
+  </text>
+  
+  <!-- High Availability Indicators -->
+  <circle cx="1050" cy="180" r="8" fill="#27AE60"/>
+  <text x="1065" y="185" font-family="Arial, sans-serif" font-size="9" fill="#27AE60">
+    HA Enabled
+  </text>
+  
+  <circle cx="1050" cy="380" r="8" fill="#27AE60"/>
+  <text x="1065" y="385" font-family="Arial, sans-serif" font-size="9" fill="#27AE60">
+    Multi-AZ
+  </text>
+  
+  <circle cx="1050" cy="610" r="8" fill="#27AE60"/>
+  <text x="1065" y="615" font-family="Arial, sans-serif" font-size="9" fill="#27AE60">
+    Encrypted
+  </text>
+</svg>

@@ -1,0 +1,446 @@
+# Azure DevOps Pipeline for Flexischools Order-Processing Service
+# This pipeline implements a comprehensive CI/CD workflow with multiple stages
+
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+      - feature/*
+  paths:
+    include:
+      - infrastructure/
+      - microservice/
+      - database/
+      - ci-cd/
+
+pr:
+  branches:
+    include:
+      - main
+      - develop
+  paths:
+    include:
+      - infrastructure/
+      - microservice/
+      - database/
+      - ci-cd/
+
+variables:
+  - group: flexischools-common
+  - name: nodeVersion
+    value: '18.x'
+  - name: awsCdkVersion
+    value: '2.x'
+  - name: dockerRegistryServiceConnection
+    value: 'docker-registry-connection'
+  - name: imageRepository
+    value: 'flexischools/order-processor'
+  - name: containerRegistry
+    value: 'flexischools.azurecr.io'
+
+stages:
+  # ============================================================================
+  # BUILD & TEST STAGE
+  # ============================================================================
+  - stage: BuildAndTest
+    displayName: 'Build and Test'
+    jobs:
+      - job: BuildInfrastructure
+        displayName: 'Build Infrastructure'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '$(nodeVersion)'
+            displayName: 'Install Node.js'
+
+          - script: |
+              npm install -g aws-cdk@$(awsCdkVersion)
+              npm install -g typescript
+            displayName: 'Install AWS CDK and TypeScript'
+
+          - script: |
+              cd infrastructure
+              npm install
+            displayName: 'Install Infrastructure Dependencies'
+
+          - script: |
+              cd infrastructure
+              npm run build
+            displayName: 'Build Infrastructure'
+
+          - script: |
+              cd infrastructure
+              npm test
+            displayName: 'Run Infrastructure Tests'
+
+          - script: |
+              cd infrastructure
+              cdk synth
+            displayName: 'Synthesize CDK Templates'
+
+          - task: PublishTestResults@2
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: 'infrastructure/test-results.xml'
+              failTaskOnFailedTests: true
+            displayName: 'Publish Test Results'
+
+          - task: PublishCodeCoverageResults@1
+            inputs:
+              codeCoverageTool: 'Cobertura'
+              summaryFileLocation: 'infrastructure/coverage/cobertura-coverage.xml'
+            displayName: 'Publish Code Coverage'
+
+          - task: PublishBuildArtifacts@1
+            inputs:
+              pathToPublish: 'infrastructure/cdk.out'
+              artifactName: 'cdk-templates'
+            displayName: 'Publish CDK Templates'
+
+      - job: BuildMicroservice
+        displayName: 'Build Microservice'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '$(nodeVersion)'
+            displayName: 'Install Node.js'
+
+          - script: |
+              cd microservice
+              npm install
+            displayName: 'Install Microservice Dependencies'
+
+          - script: |
+              cd microservice
+              npm run build
+            displayName: 'Build Microservice'
+
+          - script: |
+              cd microservice
+              npm test
+            displayName: 'Run Microservice Tests'
+
+          - script: |
+              cd microservice
+              npm run lint
+            displayName: 'Run Linting'
+
+          - script: |
+              cd microservice
+              npm audit --audit-level=moderate
+            displayName: 'Security Audit'
+
+          - task: PublishTestResults@2
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: 'microservice/test-results.xml'
+              failTaskOnFailedTests: true
+            displayName: 'Publish Test Results'
+
+          - task: PublishCodeCoverageResults@1
+            inputs:
+              codeCoverageTool: 'Cobertura'
+              summaryFileLocation: 'microservice/coverage/cobertura-coverage.xml'
+            displayName: 'Publish Code Coverage'
+
+      - job: BuildDockerImage
+        displayName: 'Build Docker Image'
+        dependsOn: BuildMicroservice
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: Docker@2
+            displayName: 'Build Docker Image'
+            inputs:
+              command: 'build'
+              dockerfile: 'microservice/Dockerfile'
+              tags: |
+                $(Build.BuildId)
+                latest
+              arguments: '--build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")'
+
+          - task: Docker@2
+            displayName: 'Push Docker Image'
+            inputs:
+              command: 'push'
+              containerRegistry: $(dockerRegistryServiceConnection)
+              repository: $(imageRepository)
+              tags: |
+                $(Build.BuildId)
+                latest
+
+  # ============================================================================
+  # SECURITY SCANNING STAGE
+  # ============================================================================
+  - stage: SecurityScanning
+    displayName: 'Security Scanning'
+    dependsOn: BuildAndTest
+    jobs:
+      - job: SecurityScan
+        displayName: 'Security Scan'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '$(nodeVersion)'
+            displayName: 'Install Node.js'
+
+          - script: |
+              npm install -g @microsoft/eslint-config-security
+              npm install -g bandit
+            displayName: 'Install Security Tools'
+
+          - script: |
+              cd microservice
+              npm audit --audit-level=moderate
+            displayName: 'NPM Security Audit'
+
+          - task: Docker@2
+            displayName: 'Scan Docker Image'
+            inputs:
+              command: 'run'
+              arguments: '--rm -v $(Build.SourcesDirectory):/app -w /app aquasec/trivy fs --format json --output trivy-results.json .'
+
+          - task: PublishBuildArtifacts@1
+            inputs:
+              pathToPublish: 'trivy-results.json'
+              artifactName: 'security-scan-results'
+            displayName: 'Publish Security Scan Results'
+
+  # ============================================================================
+  # DEVELOPMENT DEPLOYMENT STAGE
+  # ============================================================================
+  - stage: DeployDevelopment
+    displayName: 'Deploy to Development'
+    dependsOn: 
+      - BuildAndTest
+      - SecurityScanning
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
+    variables:
+      - group: flexischools-dev
+    jobs:
+      - deployment: DeployToDev
+        displayName: 'Deploy to Development'
+        environment: 'flexischools-dev'
+        pool:
+          vmImage: 'ubuntu-latest'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: AWSShellScript@1
+                  inputs:
+                    awsCredentials: 'aws-dev-connection'
+                    regionName: '$(AWS_REGION)'
+                    scriptType: 'inline'
+                    inlineScript: |
+                      # Set environment variables
+                      export ENVIRONMENT=development
+                      export APP_NAME=flexischools-order-processor
+                      export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+                      
+                      # Run database migrations
+                      cd database
+                      ./run-migrations.sh development
+                      
+                      # Deploy infrastructure
+                      cd ../infrastructure
+                      npm install
+                      cdk deploy --require-approval never --context environment=development
+                  displayName: 'Deploy to Development'
+
+                - task: AzureCLI@2
+                  inputs:
+                    azureSubscription: 'azure-dev-connection'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      # Update ECS service with new image
+                      aws ecs update-service \
+                        --cluster flexischools-order-processor-cluster-development \
+                        --service flexischools-order-processor-service-development \
+                        --force-new-deployment \
+                        --region $(AWS_REGION)
+                  displayName: 'Update ECS Service'
+
+  # ============================================================================
+  # STAGING DEPLOYMENT STAGE
+  # ============================================================================
+  - stage: DeployStaging
+    displayName: 'Deploy to Staging'
+    dependsOn: DeployDevelopment
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    variables:
+      - group: flexischools-staging
+    jobs:
+      - deployment: DeployToStaging
+        displayName: 'Deploy to Staging'
+        environment: 'flexischools-staging'
+        pool:
+          vmImage: 'ubuntu-latest'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: AWSShellScript@1
+                  inputs:
+                    awsCredentials: 'aws-staging-connection'
+                    regionName: '$(AWS_REGION)'
+                    scriptType: 'inline'
+                    inlineScript: |
+                      # Set environment variables
+                      export ENVIRONMENT=staging
+                      export APP_NAME=flexischools-order-processor
+                      export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+                      
+                      # Run database migrations with approval
+                      cd database
+                      ./run-migrations.sh staging
+                      
+                      # Deploy infrastructure
+                      cd ../infrastructure
+                      npm install
+                      cdk deploy --require-approval never --context environment=staging
+                  displayName: 'Deploy to Staging'
+
+                - script: |
+                    # Run integration tests
+                    cd tests/integration
+                    npm install
+                    npm test
+                  displayName: 'Run Integration Tests'
+
+  # ============================================================================
+  # PRODUCTION DEPLOYMENT STAGE
+  # ============================================================================
+  - stage: DeployProduction
+    displayName: 'Deploy to Production'
+    dependsOn: DeployStaging
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    variables:
+      - group: flexischools-prod
+    jobs:
+      - deployment: DeployToProduction
+        displayName: 'Deploy to Production'
+        environment: 'flexischools-production'
+        pool:
+          vmImage: 'ubuntu-latest'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: AWSShellScript@1
+                  inputs:
+                    awsCredentials: 'aws-prod-connection'
+                    regionName: '$(AWS_REGION)'
+                    scriptType: 'inline'
+                    inlineScript: |
+                      # Set environment variables
+                      export ENVIRONMENT=production
+                      export APP_NAME=flexischools-order-processor
+                      export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+                      
+                      # Create database backup before migration
+                      aws rds create-db-snapshot \
+                        --db-instance-identifier flexischools-database-production \
+                        --db-snapshot-identifier "pre-deployment-$(date +%Y%m%d%H%M%S)" \
+                        --region $(AWS_REGION)
+                      
+                      # Run database migrations with manual approval
+                      cd database
+                      ./run-migrations.sh production
+                      
+                      # Deploy infrastructure with blue-green deployment
+                      cd ../infrastructure
+                      npm install
+                      cdk deploy --require-approval never --context environment=production
+                  displayName: 'Deploy to Production'
+
+                - script: |
+                    # Run smoke tests
+                    cd tests/smoke
+                    npm install
+                    npm test
+                  displayName: 'Run Smoke Tests'
+
+                - task: AzureCLI@2
+                  inputs:
+                    azureSubscription: 'azure-prod-connection'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      # Send deployment notification
+                      curl -X POST "$(SLACK_WEBHOOK_URL)" \
+                        -H "Content-Type: application/json" \
+                        -d "{\"text\":\"🚀 Flexischools Order-Processing Service deployed to production successfully! Build: $(Build.BuildId)\"}"
+                  displayName: 'Send Deployment Notification'
+
+  # ============================================================================
+  # POST-DEPLOYMENT MONITORING STAGE
+  # ============================================================================
+  - stage: PostDeploymentMonitoring
+    displayName: 'Post-Deployment Monitoring'
+    dependsOn: DeployProduction
+    condition: succeeded()
+    jobs:
+      - job: HealthCheck
+        displayName: 'Health Check'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - script: |
+              # Wait for deployment to stabilize
+              sleep 120
+              
+              # Check application health
+              HEALTH_ENDPOINT="$(AWS_LOAD_BALANCER_DNS)/health"
+              
+              for i in {1..10}; do
+                if curl -f "$HEALTH_ENDPOINT"; then
+                  echo "Health check passed!"
+                  exit 0
+                fi
+                echo "Health check attempt $i failed, retrying..."
+                sleep 30
+              done
+              
+              echo "Health check failed after 10 attempts"
+              exit 1
+            displayName: 'Application Health Check'
+
+          - script: |
+              # Monitor CloudWatch metrics
+              aws cloudwatch get-metric-statistics \
+                --namespace AWS/ECS \
+                --metric-name CPUUtilization \
+                --dimensions Name=ServiceName,Value=flexischools-order-processor-service-production \
+                --start-time $(date -u -d '5 minutes ago' +%Y-%m-%dT%H:%M:%S) \
+                --end-time $(date -u +%Y-%m-%dT%H:%M:%S) \
+                --period 300 \
+                --statistics Average \
+                --region $(AWS_REGION)
+            displayName: 'Monitor CloudWatch Metrics'
+
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: 'azure-prod-connection'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                # Create deployment record
+                curl -X POST "$(DEPLOYMENT_WEBHOOK_URL)" \
+                  -H "Content-Type: application/json" \
+                  -d "{
+                    \"deployment_id\": \"$(Build.BuildId)\",
+                    \"environment\": \"production\",
+                    \"status\": \"success\",
+                    \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",
+                    \"version\": \"$(Build.SourceVersion)\"
+                  }"
+            displayName: 'Create Deployment Record'

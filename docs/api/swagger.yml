@@ -1,0 +1,608 @@
+openapi: 3.0.3
+info:
+  title: Flexischools Order-Processing Service API
+  description: |
+    The Flexischools Order-Processing Service provides a comprehensive API for managing school meal orders, 
+    including order creation, status tracking, payment processing, and inventory management.
+    
+    ## Features
+    - Order creation and management
+    - Real-time order status tracking
+    - Payment processing integration
+    - Inventory management
+    - Student and school management
+    - Comprehensive metrics and reporting
+    
+    ## Authentication
+    All API endpoints require proper authentication. Contact your system administrator for API keys.
+    
+    ## Rate Limiting
+    API requests are limited to 100 requests per 15-minute window per IP address.
+    
+    ## Error Handling
+    All errors follow RFC 7807 Problem Details for HTTP APIs format.
+  version: 1.0.0
+  contact:
+    name: Flexischools Platform Team
+    email: platform@flexischools.com
+    url: https://flexischools.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - url: https://api.flexischools.com/v1
+    description: Production server
+  - url: https://staging-api.flexischools.com/v1
+    description: Staging server
+  - url: http://localhost:3000
+    description: Local development server
+
+paths:
+  /health:
+    get:
+      tags:
+        - Health Check
+      summary: Health check endpoint
+      description: Returns the current health status of the service including database connectivity and system metrics
+      operationId: getHealth
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              examples:
+                healthy:
+                  value:
+                    status: "healthy"
+                    timestamp: "2025-01-15T10:30:00Z"
+                    environment: "production"
+                    version: "1.0.0"
+                    checks:
+                      database: "healthy"
+                      sqs: "healthy"
+                      memory:
+                        used: 134217728
+                        total: 536870912
+                      uptime: 3600
+        '503':
+          description: Service is unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /ready:
+    get:
+      tags:
+        - Health Check
+      summary: Readiness check endpoint
+      description: Returns whether the service is ready to handle requests
+      operationId: getReady
+      responses:
+        '200':
+          description: Service is ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadyResponse'
+        '503':
+          description: Service is not ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /orders:
+    get:
+      tags:
+        - Orders
+      summary: Get orders with filtering and pagination
+      description: Retrieve a list of orders with optional filtering by student ID, status, and pagination support
+      operationId: getOrders
+      parameters:
+        - name: studentId
+          in: query
+          description: Filter orders by student ID
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          description: Filter orders by status
+          required: false
+          schema:
+            $ref: '#/components/schemas/OrderStatus'
+        - name: page
+          in: query
+          description: Page number for pagination
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Number of orders per page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+      responses:
+        '200':
+          description: List of orders retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderListResponse'
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    post:
+      tags:
+        - Orders
+      summary: Create a new order
+      description: Create a new order for a student with specified items and delivery information
+      operationId: createOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+            examples:
+              simple_order:
+                value:
+                  studentId: "660e8400-e29b-41d4-a716-446655440001"
+                  items:
+                    - id: "770e8400-e29b-41d4-a716-446655440001"
+                      name: "Chicken Sandwich"
+                      price: 8.50
+                      quantity: 1
+                      category: "main_course"
+                    - id: "770e8400-e29b-41d4-a716-446655440004"
+                      name: "Apple Juice"
+                      price: 3.00
+                      quantity: 1
+                      category: "drink"
+                  totalAmount: 11.50
+                  deliveryDate: "2025-01-16"
+                  specialInstructions: "No onions please"
+      responses:
+        '201':
+          description: Order created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /orders/{orderId}:
+    get:
+      tags:
+        - Orders
+      summary: Get order by ID
+      description: Retrieve detailed information about a specific order
+      operationId: getOrderById
+      parameters:
+        - name: orderId
+          in: path
+          description: Order ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Order retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '404':
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /metrics:
+    get:
+      tags:
+        - Metrics
+      summary: Get system metrics
+      description: Retrieve system metrics including order statistics, processing times, and system health
+      operationId: getMetrics
+      responses:
+        '200':
+          description: Metrics retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricsResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    OrderStatus:
+      type: string
+      enum:
+        - pending
+        - processing
+        - completed
+        - cancelled
+        - failed
+      description: The current status of an order
+
+    PaymentStatus:
+      type: string
+      enum:
+        - pending
+        - processing
+        - completed
+        - failed
+        - refunded
+      description: The current status of a payment
+
+    ItemCategory:
+      type: string
+      enum:
+        - main_course
+        - side_dish
+        - dessert
+        - drink
+        - snack
+        - healthy_option
+      description: Category of menu item
+
+    OrderItem:
+      type: object
+      required:
+        - id
+        - name
+        - price
+        - quantity
+        - category
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the menu item
+        name:
+          type: string
+          description: Name of the menu item
+          example: "Chicken Sandwich"
+        price:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Price per unit
+          example: 8.50
+        quantity:
+          type: integer
+          minimum: 1
+          description: Quantity ordered
+          example: 1
+        category:
+          $ref: '#/components/schemas/ItemCategory'
+        specialRequests:
+          type: string
+          description: Special requests or modifications
+          example: "No onions please"
+
+    CreateOrderRequest:
+      type: object
+      required:
+        - studentId
+        - items
+        - totalAmount
+        - deliveryDate
+      properties:
+        studentId:
+          type: string
+          format: uuid
+          description: ID of the student placing the order
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+          minItems: 1
+          description: List of items in the order
+        totalAmount:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Total amount for the order
+          example: 11.50
+        deliveryDate:
+          type: string
+          format: date
+          description: Date when the order should be delivered
+          example: "2025-01-16"
+        specialInstructions:
+          type: string
+          description: Special delivery or preparation instructions
+          example: "Deliver to classroom 5A"
+
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the order
+        studentId:
+          type: string
+          format: uuid
+          description: ID of the student who placed the order
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+          description: List of items in the order
+        totalAmount:
+          type: number
+          format: decimal
+          description: Total amount for the order
+        deliveryDate:
+          type: string
+          format: date
+          description: Date when the order should be delivered
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        paymentStatus:
+          $ref: '#/components/schemas/PaymentStatus'
+        specialInstructions:
+          type: string
+          description: Special delivery or preparation instructions
+        createdAt:
+          type: string
+          format: date-time
+          description: When the order was created
+        updatedAt:
+          type: string
+          format: date-time
+          description: When the order was last updated
+
+    OrderResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        order:
+          $ref: '#/components/schemas/Order'
+
+    OrderListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        orders:
+          type: array
+          items:
+            $ref: '#/components/schemas/Order'
+        pagination:
+          type: object
+          properties:
+            page:
+              type: integer
+              example: 1
+            limit:
+              type: integer
+              example: 10
+            totalCount:
+              type: integer
+              example: 50
+            totalPages:
+              type: integer
+              example: 5
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "healthy"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-01-15T10:30:00Z"
+        environment:
+          type: string
+          example: "production"
+        version:
+          type: string
+          example: "1.0.0"
+        checks:
+          type: object
+          properties:
+            database:
+              type: string
+              example: "healthy"
+            sqs:
+              type: string
+              example: "healthy"
+            memory:
+              type: object
+              properties:
+                used:
+                  type: integer
+                  example: 134217728
+                total:
+                  type: integer
+                  example: 536870912
+            uptime:
+              type: number
+              example: 3600
+
+    ReadyResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "ready"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-01-15T10:30:00Z"
+
+    MetricsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        metrics:
+          type: object
+          properties:
+            totalOrders:
+              type: integer
+              description: Total number of orders in the last 24 hours
+              example: 150
+            pendingOrders:
+              type: integer
+              description: Number of pending orders
+              example: 25
+            processingOrders:
+              type: integer
+              description: Number of orders being processed
+              example: 10
+            completedOrders:
+              type: integer
+              description: Number of completed orders
+              example: 110
+            cancelledOrders:
+              type: integer
+              description: Number of cancelled orders
+              example: 5
+            averageOrderValue:
+              type: number
+              format: decimal
+              description: Average order value
+              example: 12.50
+            totalRevenue:
+              type: number
+              format: decimal
+              description: Total revenue in the last 24 hours
+              example: 1875.00
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-01-15T10:30:00Z"
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: "Order not found"
+        message:
+          type: string
+          description: Detailed error message
+          example: "The requested order could not be found in the system"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-01-15T10:30:00Z"
+
+    ValidationErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Validation failed"
+        message:
+          type: string
+          example: "The request contains invalid data"
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                example: "studentId"
+              message:
+                type: string
+                example: "Student ID is required"
+              code:
+                type: string
+                example: "REQUIRED"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-01-15T10:30:00Z"
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for authentication
+
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for authentication
+
+security:
+  - ApiKeyAuth: []
+  - BearerAuth: []
+
+tags:
+  - name: Health Check
+    description: Health and readiness check endpoints
+  - name: Orders
+    description: Order management operations
+  - name: Metrics
+    description: System metrics and analytics
+
+externalDocs:
+  description: Flexischools Developer Documentation
+  url: https://docs.flexischools.com
