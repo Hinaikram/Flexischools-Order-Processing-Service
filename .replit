@@ -1,4 +1,4 @@
-modules = ["nodejs-20"]
+modules = ["nodejs-20", "postgresql-16"]
 
 [nix]
 channel = "stable-24_05"
@@ -21,7 +21,7 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "node basic-server.js"
+args = "node database-server.js"
 waitForPort = 5000
 
 [[ports]]

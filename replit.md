@@ -34,14 +34,18 @@ Preferred communication style: Simple, everyday language.
 
 ### Microservice Application
 - **Runtime**: Node.js with Express.js framework
-- **Database**: PostgreSQL with connection pooling (pg library)
+- **Database**: PostgreSQL with connection pooling (@neondatabase/serverless)
+- **ORM**: Drizzle ORM for type-safe database operations
 - **Security Middleware**: Helmet, CORS, rate limiting
 - **Logging**: Winston for structured logging
 - **Message Processing**: AWS SDK v3 for SQS operations
 
-### Database Schema
-- **Primary Entity**: Orders table with student_id, items, total_amount, delivery_date, status
-- **Order Items**: Nested JSON structure with id, name, price, quantity, category
+### Database Schema (PostgreSQL)
+- **Users Table**: Student information with username, email, name, grade, school
+- **Menu Items Table**: Available food items with pricing, categories, nutrition info, allergens
+- **Orders Table**: Order records with student_id, total_amount, delivery_date, status, payment_status
+- **Order Items Table**: Junction table linking orders to menu items with quantities and pricing
+- **Inventory Table**: Stock tracking for menu items with availability and restock dates
 - **Status Flow**: pending → processing → completed/cancelled/failed
 
 ## Data Flow
@@ -73,8 +77,10 @@ Preferred communication style: Simple, everyday language.
 - **VPC**: Network isolation and security
 
 ### Third-Party Libraries
-- **Express.js**: Web framework
-- **pg**: PostgreSQL client
+- **@neondatabase/serverless**: PostgreSQL client optimized for serverless environments
+- **drizzle-orm**: Type-safe ORM for PostgreSQL operations
+- **drizzle-kit**: Database migration and schema management
+- **ws**: WebSocket library for database connections
 - **winston**: Logging library
 - **helmet**: Security middleware
 - **express-rate-limit**: Rate limiting
