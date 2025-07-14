@@ -1,0 +1,17 @@
+RDS (PostgreSQL)
+•	Use CloudWatch to monitor CPU, storage, and DB connections.
+•	Enable slow query and error logs, and send them to CloudWatch Logs.
+ECS Fargate
+•	Monitor CPU and memory usage with CloudWatch Container Insights.
+•	Send application logs from containers to CloudWatch Logs.
+Application Load Balancer (ALB)
+•	Monitor request count, errors (4xx/5xx), and latency in CloudWatch.
+•	Enable access logs to an S3 bucket for full request details.
+🛡️ Security Plan
+•	IAM Roles: Follow least privilege (ECS task has only access to SQS).
+•	Security Groups:
+o	RDS: Allow access only from ECS (private).
+o	ALB: Only port 80 open to public.
+•	Secrets: Store DB password in Secrets Manager, not in code.
+•	Network: Use private subnets for ECS and RDS where possible.
+•	Logging: Enable CloudTrail to track all API actions.
