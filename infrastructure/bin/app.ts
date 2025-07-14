@@ -33,6 +33,6 @@ new FlexischoolsStack(app, `FlexischoolsStack-${environment}`, {
 });
 
 // Add metadata
-app.node.setMetadata('version', '1.0.0');
-app.node.setMetadata('description', 'Flexischools AWS serverless order-processing service');
-app.node.setMetadata('author', 'Flexischools Platform Team');
+//app.node.setMetadata('version', '1.0.0');
+//app.node.setMetadata('description', 'Flexischools AWS serverless order-processing service');
+//app.node.setMetadata('author', 'Flexischools Platform Team');
