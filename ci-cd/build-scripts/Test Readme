@@ -1,0 +1,11 @@
+Run all test suites for the project in a structured, repeatable, and optionally modular fashion, ensuring:
+    
+    Code correctness (unit/integration tests)    
+    Code quality (linting)    
+    Security compliance (audit/scans)    
+    Infrastructure template validity (CDK synth)    
+    Docker image health    
+    SQL integrity    
+    Performance profiling    
+    Final reporting
+
